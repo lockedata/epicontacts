@@ -55,7 +55,8 @@ subset_clusters_by_size <- function(x, cs = NULL, cs_min = NULL, cs_max = NULL){
 
     net <- as.igraph.epicontacts(x)
     clusters <- igraph::clusters(net)
-
+    net_cs_min <- min(clusters$csize)
+    net_cs_max <- max(clusters$csize)
 
     ## If all 3 (cs, cs_min, and cs_max) are specified
     if(!is.null(cs) & !is.null(cs_min) & !is.null(cs_max)) {
@@ -65,6 +66,12 @@ subset_clusters_by_size <- function(x, cs = NULL, cs_min = NULL, cs_max = NULL){
 
     ## If only cs is specified
     if(!is.null(cs) & is.null(cs_min) & is.null(cs_max)) {
+
+        ## Check if there is any cluster of size cs
+        if(!any(clusters$csize %in% cs)) {
+            stop(paste0("There is no cluster of size ", cs))
+        }
+        
         cs_min = cs
         cs_max = cs
     }
@@ -72,12 +79,34 @@ subset_clusters_by_size <- function(x, cs = NULL, cs_min = NULL, cs_max = NULL){
 
     ## If only cs_min is specified
     if(!is.null(cs_min) & is.null(cs_max)) {
+
+        ## Check cs_min against network's minimum cluster size
+        if(cs_min < net_cs_min) {
+            stop(sprintf("cs_min (%d) is smaller than the  minimum cluster size (%d)", cs_min, net_cs_min))
+        }
+
+        ## Check cs_min against network's maximum cluster size
+        if(cs_min > net_cs_max) {
+            stop(sprintf("cs_min (%d) is greater than the maximum cluster size (%d)", cs_min, net_cs_min))
+        }
+
         cs_max = max(clusters$csize)
     }
 
 
     ## If only cs_max is specified
     if(is.null(cs_min) & !is.null(cs_max)) {
+
+        ## Check cs_max against network's maximum cluster size
+        if(cs_max > net_cs_max) {
+            stop(sprintf("cs_max (%d) is greater than the maximum cluster size (%d)", cs_max, net_cs_min))
+        }
+
+        ## Check cs_max against network's minimum cluster size
+        if(cs_max < net_cs_min) {
+            stop(sprintf("cs_max (%d) is smaller than the minimum cluster size (%d)", cs_max, net_cs_min))
+        }
+
         cs_min = min(clusters$csize)
     }
 
